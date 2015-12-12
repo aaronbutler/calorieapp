@@ -1,0 +1,563 @@
+<html>
+<head>
+<!-- jQuery + Underscore + Backbone -->
+<!-- jQuery -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+
+<!-- Underscore -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.7.0/underscore.js"></script>
+
+<!-- Backbone -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.1.2/backbone.js"></script>
+
+<!-- Firebase -->
+<script src="https://cdn.firebase.com/js/client/2.0.3/firebase.js"></script>
+
+<!-- BackboneFire -->
+<script src="https://cdn.firebase.com/libs/backbonefire/0.5.1/backbonefire.js"></script>
+
+
+<style>
+	.food-container {
+		width: 100%;
+		order: 1;
+		display: flex;
+		flex-box: box;
+	}
+	
+	#days {
+		display: flex;
+		flex-wrap: wrap;
+	}
+	
+	.meals {
+		display: flex;
+		flex-wrap: wrap;
+	}
+	.meal-container {
+		width: 100%;
+		display: flex;
+		flex-wrap: wrap;
+		margin: 1em;
+	}
+	
+	.calorie-total {
+		order: 0;
+	}
+</style>
+
+
+</head>
+<body>
+	<header id="search">
+		<h1>I ate...</h1>
+		<input id="search-food" placeholder="What did I eat?">
+		<button class="search-food-button">Search</button>
+	</header>
+	
+	<section id="nutritionix-list"></section>
+	
+	<section id="addFood">
+		<input class="food-input" type="text" value="food">
+		<input class="meal-input" type="text" placeholder="meal">
+		<input class="date-input" type="text" placeholder="date">
+		<input class="quantity-input" type="text" placeholder="quantity">
+		<input class="units-input" type="text" placeholder="units">
+		<input class="calories-input" type="text" placeholder="calories">
+		<button class="addFood-button">Add Food</button>
+	</section>
+	
+	<section id="days"></section>
+	
+	<section id="meals"></section>
+	<script id="foodTemplate" type="text/template">
+		<div><%= name %></div>
+		<div><%= meal %></div>
+		<div><%= date %></div>
+		<div><%= quantity %></div>
+		<div><%= units %></div>
+		<div><%= calories %></div>
+	</script>
+	
+	<script id="nutritionixFoodTemplate" type="text/template">
+		<div><%= name %></div>
+		<div class="nutid"><%= nutritionixId %></div>
+		<div><%= quantity %></div>
+		<div><%= units %></div>
+		<div><%= calories %></div>
+	</script>
+	
+	<script>
+		//var searchString = '';
+		var self = this;
+		
+		/*from codebeerstartups*/
+		var template = function(id){
+			return _.template( $('#' + id).html() );
+		};
+		
+		// This is a plain old Backbone Model
+		var FoodItem = Backbone.Model.extend({
+			
+		  defaults: {
+			name: 'food',
+			meal: 'snack',
+			quantity: 1,
+			date: 20151211,
+			units: 'whole',
+			calories: 1
+		  }
+		});
+		
+		var NutritionixFoodItem = Backbone.Model.extend({
+			defaults: {
+				name: '',
+				nutritionixId: 0,
+				quantity: 0,
+				units: 'NA',
+				calories: 0
+			}
+		});
+		
+		
+		var FoodCollection = Backbone.Firebase.Collection.extend({
+			model: FoodItem,
+			comparator: 'date',
+			url: 'https://glaring-torch-4473.firebaseio.com/calorieapp/flat/',
+		});
+		
+		var NutritionixFoodList = Backbone.Collection.extend({
+			model: NutritionixFoodItem
+		});
+	
+		var FoodView = Backbone.View.extend({
+			tagName: 'div',
+			attributes: {
+				'class': 'food-container'
+			},
+			
+			template: template('foodTemplate'),
+			initialize: function(){
+				this.render();
+			},
+
+			render: function(){
+				this.$el.html( this.template(this.model.toJSON()));
+				return this;
+			}
+		});
+		
+		//for testing/debugginng
+		var FoodCollectionView = Backbone.View.extend({
+			tagName: 'div',
+			attributes: {
+				'class': 'foodList-container'
+			},
+			
+			initialize: function(){
+				this.collection.on('add', this.addOne, this);
+			},
+			
+			render: function(){
+				this.collection.each(function(food){
+					//var foodView = new FoodView({ model: food });
+					//this.$el.append(foodView.el); // adding all the person objects.
+					this.addOne(food);
+				}, this);
+				return this;
+			},
+			
+			addOne: function(food) {
+				var foodView = new FoodView({ model: food });
+				this.$el.append(foodView.el); // adding all the food objects.
+			}
+		});
+		
+		
+		//MealView will make a meal div and take an array of food models and make food views for each
+		//It will listen to collection changes/adds/deletes for meal and day info, update accordingly
+		var MealView = Backbone.View.extend({
+			tagName: 'div',
+			list: [],
+			collection: Object,
+			date: String,
+			meal: String,
+			calories: Number,
+			attributes: {
+				'class': 'meal-container'
+			},
+			
+			initialize: function(params){
+				//console.log('params:');
+				//console.dir(params);
+				this.collection = params.collection;
+				this.list = params.list;
+				this.date=params.date;
+				this.meal=params.meal;
+				this.calories=0;
+				this.$el.append('<div class="calorie-total">'+this.calories+'</div>');
+				//console.dir(this.$el.css);
+				
+				this.collection.on('add', this.conditionalAddOne, this);
+			},
+			
+			render: function(){
+				//console.dir(this.list);
+				
+				this.list.forEach(function(food){
+					//var foodView = new FoodView({ model: food });
+					//this.$el.append(foodView.el); // adding all the person objects.
+					this.addOne(food);
+				}, this);
+				
+				return this;
+			},
+			
+			conditionalAddOne: function(food) {
+				//console.log('in conditionalAddOne: '+this.date+' '+this.meal);
+				//console.dir(food);
+				if(food.get('date') == this.date && food.get('meal') == this.meal) {
+					//console.log('adding food to meal');
+					this.list.push(food)
+					this.addOne(food);
+				}
+			},
+			
+			addOne: function(food) {
+				//console.log('meal adding food');
+				//console.dir(food);
+				//console.dir(this.$('.calorie-total'));
+				var foodView = new FoodView({ model: food });
+				this.$el.append(foodView.el); // adding all the person objects.
+				this.calories += parseInt(food.get('calories'));
+				this.$('.calorie-total')[0].innerHTML=this.calories;
+				//this.$el.
+			}
+		});
+		
+		//DayView will make a day div and take an array of meals and make a mealview for each
+		//It will listen to collection changes/adds/deletes for meal and day info, update accordingly
+		var DateView = Backbone.View.extend({
+			tagName: 'div',
+			day: String,
+			calories: Number,
+			collection: Object,
+			attributes: {
+				'class': 'day-container'
+			},
+			initialize: function(params){
+				this.collection = params.collection;
+				this.day = params.day;
+				this.calories = parseInt(params.firstCalories);
+				this.$el.append('<div class="day-day">'+this.day+'</div>');
+				this.$el.append('<div class="calorie-total">'+this.calories+'</div>');
+				this.$el.append('<div class="meals"></div>');
+				this.$el.css({'order':(parseInt(this.day)-20150000) * -1});
+				this.collection.on('add', this.conditionalUpdateCalories, this);
+				//console.dir(this);
+			},
+			render: function(){
+				return this;
+			},
+			conditionalUpdateCalories: function(food){
+				if(food.get('date') == this.day) {
+					this.updateCalories(food);
+				}
+			
+			},
+			updateCalories: function(food) {
+				this.calories += parseInt(food.get('calories'));
+				this.$('.calorie-total')[0].innerHTML=this.calories;
+				
+			}
+		});
+		
+		
+		var SearchView = Backbone.View.extend({
+			el: '#search',
+			searchString: String,
+			events: {
+				'click .search-food-button': 'search'
+			},
+			search: function(e) {
+				console.log('searching...');
+				//console.dir(e);
+				var searchBase = 'https://api.nutritionix.com/v1_1/search/';
+				var searchParams = '?results=0:3&fields=item_name,brand_name,item_id,nf_calories&';
+				var nAppId = 'f4a802c3';
+				var nAppKey = 'bf99750cd2a7430e09cc6922ab659d72';
+				searchString = $('#search-food').val().trim();
+				//var nc = self.nutController;
+				//console.dir(nc);
+				var searchUrl = searchBase+searchString+searchParams+'appId='+nAppId+'&appKey='+nAppKey;
+				console.log(searchUrl);
+				$.ajax({
+					  // The 'type' property sets the HTTP method.
+					  // A value of 'PUT' or 'DELETE' will trigger a preflight request.
+					  type: 'GET',
+
+					  // The URL to make the request to.
+					  url: searchUrl,
+
+					  // The 'contentType' property sets the 'Content-Type' header.
+					  // The JQuery default for this property is
+					  // 'application/x-www-form-urlencoded; charset=UTF-8', which does not trigger
+					  // a preflight. If you set this value to anything other than
+					  // application/x-www-form-urlencoded, multipart/form-data, or text/plain,
+					  // you will trigger a preflight request.
+					  contentType: 'text/plain',
+					  
+					  success: function(result) {
+						//console.dir(result.hits[0].fields);
+						//var item1 = new app.FoodItem({name: 'tortellini',meal: 'Dinner', quantity: 8, units: 'oz', calories: 400, notes: 'I ate dinner'});
+						//var nutListView = new NutritionixListView({data: result});
+						console.log('got a result...');
+						console.dir(result);
+						self.nutController.buildNutListView({data:result});
+						/*
+						for (var i=0,l=result.hits.length;i<l;i++) {
+							var fields = result.hits[i].fields;
+							var item = new app.NutritionixFoodItem({name: fields['item_name'],quantity: fields['nf_serving_size_qty'],units: fields['nf_serving_size_unit'],calories: fields['nf_calories'], nutritionixId: fields['item_id']});
+							var view = new app.NutritionixFoodItemView({model: item});
+							_this.$el.append(view.render().el);
+							//searchResults.push(item)
+						}
+						
+						*/
+						//_this.renderSearch()
+					  },
+					  
+					  error: function(e) {
+						console.dir(e);
+					  }
+				});
+			}
+		});
+		
+		
+		var NutritionixListView = Backbone.View.extend({
+			tagName: 'ul',
+			collection: Object,
+			initialize: function(params) {
+				this.collection = params.collection;
+				//this.render();
+			},
+			render: function() {
+				this.collection.each(function(nutFood){
+					//var foodView = new FoodView({ model: food });
+					//this.$el.append(foodView.el); // adding all the person objects.
+					this.addOne(nutFood);
+				}, this);
+				return this;
+			},
+			addOne: function(nutFood) {
+				var nutFoodView = new NutritionixFoodView({ model: nutFood });
+				this.$el.append(nutFoodView.el); // adding all the food objects.
+			}
+		});
+		
+		var NutritionixFoodView = Backbone.View.extend({
+			tagName: 'li',
+			events: {
+				'click .nutid': 'pickNutritionixItem'
+			},
+			template: template('nutritionixFoodTemplate'),
+			initialize: function(){
+				this.render();
+			},
+
+			render: function(){
+				this.$el.html( this.template(this.model.toJSON()));
+				return this;
+			},
+			pickNutritionixItem: function(){
+				nutController.populateAddFood(this.model);
+			}
+		});
+		
+		/*var FoodView = Backbone.View.extend({
+			tagName: 'div',
+			attributes: {
+				'class': 'food-container'
+			},
+			
+			template: template('foodTemplate'),
+			initialize: function(){
+				this.render();
+			},
+
+			render: function(){
+				this.$el.html( this.template(this.model.toJSON()));
+				return this;
+			}
+		});
+		*/
+		
+		var AddFoodView = Backbone.View.extend({
+			el: '#addFood',  // referencing the form itself.
+			
+			events: {
+				'click .addFood-button': 'submit'  // binding submit click to submit function..
+			},
+			
+			submit: function(e){
+				console.log('submitting addfoodview');
+				console.dir(e);
+				//e.preventDefault();  // preventing default submission..
+				var name = $('.food-input').val();  // getting new form values..
+				var meal = $('.meal-input').val();  // getting new form values..
+				var date = $('.date-input').val();  // getting new form values..
+				var quantity = $('.quantity-input').val();  // getting new form values..
+				var units = $('.units-input').val();  // getting new form values..
+				var calories = $('.calories-input').val();  // getting new form values..
+				//var person = new App.Models.Person({ name: newPersonName });// creating a new person object..
+				this.collection.add({name: name, meal: meal, date: date, quantity: quantity, units: units, calories: calories}); // adding this to current collection..
+
+			},
+			populate: function(nutfood) {
+				var d = new Date();
+				var y = String(d.getFullYear());
+				var m = String(d.getMonth()+1);
+				var a = String(d.getDate());
+				var date = y+m+a;
+				
+				$('.food-input').val(nutfood.get('name'));
+				$('.meal-input').val('snack');
+				$('.date-input').val(date);
+				$('.quantity-input').val('1');
+				$('.units-input').val(nutfood.get('units'));
+				$('.calories-input').val(nutfood.get('calories'));
+			
+			}
+		});
+		
+		var NutritionixViewController = function() {
+			this.searchView = new SearchView();
+			this.addFoodView = new AddFoodView({collection: collection});
+			
+			this.nutListView = null;
+			this.nutritionixCollection = new NutritionixFoodList();
+			
+			
+			var destroyNutListView = function() {
+			
+			};
+		};
+		
+		NutritionixViewController.prototype.buildNutListView = function(data) {
+			console.log('empty nut collection?');
+			console.dir(this.nutritionixCollection);
+			var result=data.data;
+			for (var i=0,l=result.hits.length;i<l;i++) {
+				var fields = result.hits[i].fields;
+				this.nutritionixCollection.add({name: fields['item_name'],quantity: fields['nf_serving_size_qty'],units: fields['nf_serving_size_unit'],calories: fields['nf_calories'], nutritionixId: fields['item_id']});
+				//var item = new app.NutritionixFoodItem({name: fields['item_name'],quantity: fields['nf_serving_size_qty'],units: fields['nf_serving_size_unit'],calories: fields['nf_calories'], nutritionixId: fields['item_id']});
+				//var view = new app.NutritionixFoodItemView({model: item});
+				//_this.$el.append(view.render().el);
+				
+			}
+			this.nutListView = new NutritionixListView({collection: this.nutritionixCollection});
+			console.log('the nut list view');
+			console.dir(this.nutListView);
+			$('#nutritionix-list').append(this.nutListView.render().el);
+		};
+		
+		NutritionixViewController.prototype.populateAddFood = function(nutfood) {
+			console.log('the nutfood to use...');
+			console.dir(nutfood);
+			this.addFoodView.populate(nutfood);
+			//console.dir($('.food-input'));
+			/*var d = new Date();
+			var y = String(d.getFullYear());
+			var m = String(d.getMonth()+1);
+			var a = String(d.getDate());
+			var date = y+m+a;
+			
+			$('.food-input').val(nutfood.get('name'));
+			$('.meal-input').val('snack');
+			$('.date-input').val(date);
+			$('.quantity-input').val('1');
+			$('.units-input').val(nutfood.get('units'));
+			$('.calories-input').val(nutfood.get('calories'));*/
+			
+			/*		<input class="food-input" type="text" value="food">
+		<input class="meal-input" type="text" placeholder="meal">
+		<input class="date-input" type="text" placeholder="date">
+		<input class="quantity-input" type="text" placeholder="quantity">
+		<input class="units-input-input" type="text" placeholder="units">
+		<input class="calories-input" type="text" placeholder="calories">
+		*/
+		};
+		
+		var mealViewController = function(){
+			map = {};
+			var collection = new FoodCollection();
+			
+			collection.on('add', function(food){
+				var datekey = food.get('date');
+				var mealkey = food.get('meal');
+				var firstCalories = food.get('calories');
+				var dateView;
+				if(!map[datekey]) {
+					dateView = new DateView({collection: collection, day: datekey, firstCalories: firstCalories});
+					$('#days').append(dateView.render().el);
+					map[datekey] = {dateView: dateView};
+				}
+				else {
+					dateView = map[datekey]['dateView'];
+				}
+				
+				if(!map[datekey][mealkey]) {
+					var mealView = new MealView({collection: collection, list: [food], date: datekey, meal: mealkey});
+					//dateView.$el.find('.meals')[0].append(mealView.render().el);
+					console.dir(dateView.$el.find('.meals'));
+					var dateEl = dateView.$el.find('.meals');
+					$(mealView.render().el).appendTo(dateEl);
+					map[datekey][mealkey]=mealView;
+				}
+			});
+			/*
+			collection.on('add',function(food) {
+				//console.dir(food);
+				var key = food.get('date')+','+food.get('meal');
+				if(map[key]) {
+					//console.log('alreadygot '+key);
+					//console.dir(food);
+				}
+				else {
+					//console.log('making a new one '+key);
+					//console.dir(food);
+					var v = new MealView({collection: collection, list: [food], date: food.get('date'), meal: food.get('meal')});
+					$('#meals').append(v.render().el);
+					map[key] = v;
+				}
+			});*/
+			
+			
+			return collection
+		};
+		
+		var collection = mealViewController();
+		self.nutController = new NutritionixViewController();
+		//var collection = new FoodCollection();
+		//collection.on('all', function(event){
+			//console.dir(event);
+		//});
+		
+		//var addFoodView = new AddFoodView({collection: collection});
+		
+		//var foodCollectionView = new FoodCollectionView({ collection: collection });
+		//$(document.body).append(foodCollectionView.render().el);
+		
+		/*
+		var groups = collection.groupBy(function(model){return [model.get('date'), model.get('meal')];});
+		var l = Object.keys(groups);
+		l.forEach(function(f){
+			//console.dir(groups[f]);
+			var mealView = new MealView({collection: collection, list: groups[f], date: groups[f][0].get('date'), meal: groups[f][0].get('meal')}) 
+			$(document.body).append(mealView.render().el);
+		});
+		*/
+	</script>
+</body>
+</html>

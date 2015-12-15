@@ -1,5 +1,6 @@
 <html>
 <head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <!-- jQuery + Underscore + Backbone -->
 <!-- jQuery -->
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
@@ -16,6 +17,14 @@
 <!-- BackboneFire -->
 <script src="https://cdn.firebase.com/libs/backbonefire/0.5.1/backbonefire.js"></script>
 
+<script src="//d3js.org/d3.v3.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+
+
+<!-- Bootstrap core CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap theme -->
+    <link href="css/bootstrap-theme.min.css" rel="stylesheet">
 
 <style>
 	.food-container {
@@ -24,7 +33,10 @@
 		display: flex;
 		flex-box: box;
 	}
-	
+	.day-button {
+		margin: 0.1em;
+	}
+	/*
 	#days {
 		display: flex;
 		flex-wrap: wrap;
@@ -43,12 +55,55 @@
 	
 	.calorie-total {
 		order: 0;
-	}
+	}*/
 </style>
+
+<style>
+
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  margin: auto;
+  position: relative;
+  width: 960px;
+}
+
+text {
+  font: 10px sans-serif;
+}
+
+.axis path {
+  display: none;
+}
+
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.group-label {
+  font-weight: bold;
+  text-anchor: end;
+}
+
+form {
+  //position: absolute;
+  right: 10px;
+  top: 10px;
+}
+
+</style>
+
 
 
 </head>
 <body>
+	<section id="d3-graph">
+		<form>
+			<label><input type="radio" name="mode" value="multiples" checked> Multiples</label>
+			<label><input type="radio" name="mode" value="stacked"> Stacked</label>
+		</form>
+	</section>
 	<header id="search">
 		<h1>I ate...</h1>
 		<input id="search-food" placeholder="What did I eat?">
@@ -67,7 +122,9 @@
 		<button class="addFood-button">Add Food</button>
 	</section>
 	
-	<section id="days"></section>
+	<section id="days" class="container"></section>
+	
+	
 	
 	<section id="meals"></section>
 	<script id="foodTemplate" type="text/template">
@@ -195,6 +252,7 @@
 				this.date=params.date;
 				this.meal=params.meal;
 				this.calories=0;
+				this.$el.append('<div class="meal-name">'+this.meal+'</div>');
 				this.$el.append('<div class="calorie-total">'+this.calories+'</div>');
 				//console.dir(this.$el.css);
 				
@@ -249,9 +307,10 @@
 				this.collection = params.collection;
 				this.day = params.day;
 				this.calories = parseInt(params.firstCalories);
-				this.$el.append('<div class="day-day">'+this.day+'</div>');
-				this.$el.append('<div class="calorie-total">'+this.calories+'</div>');
-				this.$el.append('<div class="meals"></div>');
+				
+				this.$el.append('<button type="button" class="day-button btn btn-block row" data-toggle="collapse" data-target="#meals-for-'+this.day+'"><div class="col-xs-3">'+this.day+'</div> - <div class="col-xs-3 calorie-total"'+this.calories+'</div></button>');
+				//this.$el.append('<div class="calorie-total">'+this.calories+'</div>');
+				this.$el.append('<div class="meals collapse" id="meals-for-'+this.day+'"></div>');
 				this.$el.css({'order':(parseInt(this.day)-20150000) * -1});
 				this.collection.on('add', this.conditionalUpdateCalories, this);
 				//console.dir(this);
@@ -313,7 +372,7 @@
 						//var nutListView = new NutritionixListView({data: result});
 						console.log('got a result...');
 						console.dir(result);
-						self.nutController.buildNutListView({data:result});
+						self.calorieViewController.buildNutListView({data:result});
 						/*
 						for (var i=0,l=result.hits.length;i<l;i++) {
 							var fields = result.hits[i].fields;
@@ -371,7 +430,7 @@
 				return this;
 			},
 			pickNutritionixItem: function(){
-				nutController.populateAddFood(this.model);
+				self.calorieViewController.populateAddFood(this.model);
 			}
 		});
 		
@@ -431,6 +490,7 @@
 			}
 		});
 		
+		/*
 		var NutritionixViewController = function() {
 			this.searchView = new SearchView();
 			this.addFoodView = new AddFoodView({collection: collection});
@@ -438,10 +498,6 @@
 			this.nutListView = null;
 			this.nutritionixCollection = new NutritionixFoodList();
 			
-			
-			var destroyNutListView = function() {
-			
-			};
 		};
 		
 		NutritionixViewController.prototype.buildNutListView = function(data) {
@@ -466,79 +522,80 @@
 			console.log('the nutfood to use...');
 			console.dir(nutfood);
 			this.addFoodView.populate(nutfood);
-			//console.dir($('.food-input'));
-			/*var d = new Date();
-			var y = String(d.getFullYear());
-			var m = String(d.getMonth()+1);
-			var a = String(d.getDate());
-			var date = y+m+a;
-			
-			$('.food-input').val(nutfood.get('name'));
-			$('.meal-input').val('snack');
-			$('.date-input').val(date);
-			$('.quantity-input').val('1');
-			$('.units-input').val(nutfood.get('units'));
-			$('.calories-input').val(nutfood.get('calories'));*/
-			
-			/*		<input class="food-input" type="text" value="food">
-		<input class="meal-input" type="text" placeholder="meal">
-		<input class="date-input" type="text" placeholder="date">
-		<input class="quantity-input" type="text" placeholder="quantity">
-		<input class="units-input-input" type="text" placeholder="units">
-		<input class="calories-input" type="text" placeholder="calories">
-		*/
+
 		};
-		
-		var mealViewController = function(){
-			map = {};
-			var collection = new FoodCollection();
+		*/
+		var CalorieViewController = function(){
+			var self = this;
+			console.log('making calorieviewcontroller');
+			console.dir(self);
+			self.map = {};
 			
-			collection.on('add', function(food){
+			self.collection = new FoodCollection();
+			
+			self.collection.on('add', function(food){
 				var datekey = food.get('date');
 				var mealkey = food.get('meal');
 				var firstCalories = food.get('calories');
-				var dateView;
-				if(!map[datekey]) {
-					dateView = new DateView({collection: collection, day: datekey, firstCalories: firstCalories});
+				var dateView = null;
+				if(!self.map[datekey]) {
+					dateView = new DateView({collection: self.collection, day: datekey, firstCalories: firstCalories});
 					$('#days').append(dateView.render().el);
-					map[datekey] = {dateView: dateView};
+					self.map[datekey] = {dateView: dateView};
 				}
 				else {
-					dateView = map[datekey]['dateView'];
+					dateView = self.map[datekey]['dateView'];
 				}
 				
-				if(!map[datekey][mealkey]) {
-					var mealView = new MealView({collection: collection, list: [food], date: datekey, meal: mealkey});
+				if(!self.map[datekey][mealkey]) {
+					var mealView = new MealView({collection: self.collection, list: [food], date: datekey, meal: mealkey});
 					//dateView.$el.find('.meals')[0].append(mealView.render().el);
 					console.dir(dateView.$el.find('.meals'));
 					var dateEl = dateView.$el.find('.meals');
 					$(mealView.render().el).appendTo(dateEl);
-					map[datekey][mealkey]=mealView;
+					self.map[datekey][mealkey]=mealView;
 				}
 			});
-			/*
-			collection.on('add',function(food) {
-				//console.dir(food);
-				var key = food.get('date')+','+food.get('meal');
-				if(map[key]) {
-					//console.log('alreadygot '+key);
-					//console.dir(food);
-				}
-				else {
-					//console.log('making a new one '+key);
-					//console.dir(food);
-					var v = new MealView({collection: collection, list: [food], date: food.get('date'), meal: food.get('meal')});
-					$('#meals').append(v.render().el);
-					map[key] = v;
-				}
-			});*/
 			
+			self.searchView = new SearchView();
+			self.addFoodView = new AddFoodView({collection: self.collection});
 			
-			return collection
+			self.nutListView = null;
+			self.nutritionixCollection = new NutritionixFoodList();
 		};
 		
-		var collection = mealViewController();
-		self.nutController = new NutritionixViewController();
+		CalorieViewController.prototype.buildNutListView = function(data) {
+			console.log('empty nut collection?');
+			console.dir(this.nutritionixCollection);
+			var result=data.data;
+			for (var i=0,l=result.hits.length;i<l;i++) {
+				var fields = result.hits[i].fields;
+				this.nutritionixCollection.add({name: fields['item_name'],quantity: fields['nf_serving_size_qty'],units: fields['nf_serving_size_unit'],calories: fields['nf_calories'], nutritionixId: fields['item_id']});
+				//var item = new app.NutritionixFoodItem({name: fields['item_name'],quantity: fields['nf_serving_size_qty'],units: fields['nf_serving_size_unit'],calories: fields['nf_calories'], nutritionixId: fields['item_id']});
+				//var view = new app.NutritionixFoodItemView({model: item});
+				//_this.$el.append(view.render().el);
+				
+			}
+			this.nutListView = new NutritionixListView({collection: this.nutritionixCollection});
+			console.log('the nut list view');
+			console.dir(this.nutListView);
+			$('#nutritionix-list').append(this.nutListView.render().el);
+		};
+		
+		CalorieViewController.prototype.clearNutCollection = function() {
+			this.nutritionixCollection.reset();
+			//need to set the views to listen to reset event and clean themselves up
+		};
+		
+		CalorieViewController.prototype.populateAddFood = function(nutfood) {
+			console.log('the nutfood to use...');
+			console.dir(nutfood);
+			this.addFoodView.populate(nutfood);
+
+		};
+		
+		self.calorieViewController = new CalorieViewController();
+		//self.nutController = new NutritionixViewController();
 		//var collection = new FoodCollection();
 		//collection.on('all', function(event){
 			//console.dir(event);
@@ -559,5 +616,186 @@
 		});
 		*/
 	</script>
+	<script>
+		var buildGroupedData = function() {
+			groups = calorieViewController.collection.sortBy('meal');
+			console.dir(groups);
+			var mlist = [];
+			var currentMeal = groups[0].get('meal');
+			var currentDate = groups[0].get('date');
+			var currentCals = 0;
+			
+			groups.forEach(function(item,i){
+				console.log(currentMeal + ' - '+currentDate);
+				if(item.get('meal') == currentMeal && item.get('date') == currentDate) {
+					currentCals += parseFloat(item.get('calories'));
+				}
+				else {
+					var mm = {meal: currentMeal, date: currentDate, cals: currentCals};
+					console.log('adding a meal: ');
+					console.dir(mm);
+					mlist.push(mm);
+					console.dir(mlist);
+					currentMeal = item.get('meal');
+					currentDate = item.get('date');
+					currentCals = parseFloat(item.get('calories'));
+				}
+				if(groups.length == i+1) {
+					mlist.push({meal: currentMeal, date: currentDate, cals: currentCals});
+				}
+				console.dir(mlist);
+			});
+			return mlist;
+		};
+	</script>
+	
+	
+	<script>
+var buildD3 = function(){
+
+
+//var parseDate = d3.time.format("%Y-%m").parse,
+//    formatYear = d3.format("02d"),
+    //formatDate = function(d) { return "Q" + ((d.getMonth() / 3 | 0) + 1) + formatYear(d.getFullYear() % 100); };
+
+   // formatDate = function(d) { return String(d.getFullYear()%100)+String(d.getMonth()+1)+String(d.getDate());}
+
+	
+	var margin = {top: 10, right: 20, bottom: 20, left: 60},
+    width = 960 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+var y0 = d3.scale.ordinal()
+    .rangeRoundBands([height, 0], .2);
+
+var y1 = d3.scale.linear();
+
+var x = d3.scale.ordinal()
+    .rangeRoundBands([0, width], .1, 0);
+
+var y = d3.scale.linear()
+    .range([height, 0]);
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+    //.tickFormat(formatDate);
+	//.tickFormat(function(d) { return String(d.date); });@@@@@@@@@@@remove ; from .orient if put this back in
+var yAxis = d3.svg.axis()
+	.scale(y)
+	.orient('right')
+	.ticks(20, '');
+	
+var nest = d3.nest()
+    //.key(function(d) { return d.group; });
+	.key(function(d){ return d.meal;});
+
+var stack = d3.layout.stack()
+    .values(function(d) { return d.values; })
+    .x(function(d) { return d.date; })
+    //.y(function(d) { return d.value; })
+	.y(function(d) {return d.cals;})
+    .out(function(d, y0) { d.valueOffset = y0; });
+
+var color = d3.scale.category10();
+
+//var svg = d3.select("body").append("svg")
+var svg = d3.select('#d3-graph').append('svg')
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+//d3.tsv("data.tsv", function(error, data) {
+var data = buildGroupedData();
+console.log('d3 got data: ');
+console.dir(data);
+  data.forEach(function(d) {
+    //d.date = parseDate(d.date);
+    //d.value = +d.value;
+	d.cals = +d.cals;
+  });
+
+  var dataByGroup = nest.entries(data);
+  console.log('dataByGroup:');
+  console.dir(dataByGroup);
+
+  stack(dataByGroup);
+  x.domain(dataByGroup[0].values.map(function(d) { return d.date; }));
+  y.domain([0, d3.max(data, function(d) { return parseFloat(d.cals); })]);
+  y0.domain(dataByGroup.map(function(d) { return d.key; }));
+  //y1.domain([0, d3.max(data, function(d) { return d.value; })]).range([y0.rangeBand(), 0]);
+  y1.domain([0, d3.max(data, function(d) {return d.cals;})]).range([y0.rangeBand(), 0]);
+
+  var group = svg.selectAll(".group")
+      .data(dataByGroup)
+    .enter().append("g")
+      .attr("class", "group")
+      .attr("transform", function(d) { return "translate(0," + y0(d.key) + ")"; });
+
+  group.append("text")
+      .attr("class", "group-label")
+      .attr("x", -6)
+      //.attr("y", function(d) { return y1(d.values[0].value / 2); })
+	  .attr('y', function(d) { return y1(d.values[0].cals / 2); })
+      .attr("dy", ".35em")
+      //.text(function(d) { return "Group " + d.key; });
+	  .text(function(d) {return d.key;});
+
+  group.selectAll("rect")
+      .data(function(d) { return d.values; })
+    .enter().append("rect")
+      //.style("fill", function(d) { return color(d.group); })
+	  .style('fill', function(d) { return color(d.meal); })
+      .attr("x", function(d) { return x(d.date); })
+      //.attr("y", function(d) { return y1(d.value); })
+	  .attr('y', function(d) { return y1(d.cals); })
+      .attr("width", x.rangeBand())
+      //.attr("height", function(d) { return y0.rangeBand() - y1(d.value); });@@@@@@@@@@@@@@@@different
+	  .attr('height', function(d) {return y0.rangeBand() - y1(d.cals); });
+
+  group.filter(function(d, i) { return !i; }).append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + y0.rangeBand() + ")")
+      .call(xAxis);
+  
+  group.append("g")
+      .attr("class", "y axis")
+      .call(yAxis);
+
+  d3.selectAll("input").on("change", change);
+
+//  var timeout = setTimeout(function() {
+//    d3.select("input[value=\"stacked\"]").property("checked", true).each(change);
+//  }, 2000);
+
+  function change() {
+    //clearTimeout(timeout);
+    if (this.value === "multiples") transitionMultiples();
+    else transitionStacked();
+  }
+
+  function transitionMultiples() {
+    var t = svg.transition().duration(750),
+        g = t.selectAll(".group").attr("transform", function(d) { return "translate(0," + y0(d.key) + ")"; });
+    //g.selectAll("rect").attr("y", function(d) { return y1(d.value); });
+	g.selectAll('rect').attr('y', function(d) { return y1(d.cals); });
+    //g.select(".group-label").attr("y", function(d) { return y1(d.values[0].value / 2); })
+	g.select('.group-label').attr('y', function(d) { return y1(d.values[0].cals / 2); })
+  }
+
+  function transitionStacked() {
+    var t = svg.transition().duration(750),
+        g = t.selectAll(".group").attr("transform", "translate(0," + y0(y0.domain()[0]) + ")");
+    //g.selectAll("rect").attr("y", function(d) { return y1(d.value + d.valueOffset); });
+	g.selectAll("rect").attr("y", function(d) { return y1(d.cals + d.valueOffset); });
+    //g.select(".group-label").attr("y", function(d) { return y1(d.values[0].value / 2 + d.values[0].valueOffset); })
+	g.select(".group-label").attr("y", function(d) { return y1(d.values[0].cals / 2 + d.values[0].valueOffset); })
+  }
+};
+//}
+</script>
+
+
 </body>
 </html>

@@ -18,13 +18,7 @@
 <script src="https://cdn.firebase.com/libs/backbonefire/0.5.1/backbonefire.js"></script>
 
 <script src="//d3js.org/d3.v3.min.js"></script>
-<script src="js/bootstrap.min.js"></script>
 
-
-<!-- Bootstrap core CSS -->
-    <link href="css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap theme -->
-    <link href="css/bootstrap-theme.min.css" rel="stylesheet">
 
 <style>
 	.food-container {
@@ -33,8 +27,75 @@
 		display: flex;
 		flex-box: box;
 	}
-	.day-button {
+	#days {
+		display: flex;
+		flex-wrap: wrap;
+	}
+	.day-container {
 		margin: 0.1em;
+		width: 80%;
+	}
+	.day-button {
+		width: 100%;
+	}
+	.Weekday-0 .day-button{
+		border: 0.3em solid red;
+	}
+	.Weekday-1 .day-button{
+		border: 0.3em solid orange;
+	}
+	.Weekday-2 .day-button{
+		border: 0.3em solid yellow;
+	}
+	.Weekday-3 .day-button{
+		border: 0.3em solid green;
+	}
+	.Weekday-4 .day-button{
+		border: 0.3em solid blue;
+	}
+	.Weekday-5 .day-button{
+		border: 0.3em solid indigo;
+	}
+	.Weekday-6 .day-button{
+		border: 0.3em solid violet;
+	}
+	.meals {
+		display: none;
+		width: 100%;
+	}
+	
+	.meals.expand {
+		display: flex;
+		flex-wrap: wrap;
+	}
+	
+	.meal-container {
+		width: 100%;
+		display: flex;
+		flex-wrap: wrap;
+		margin: 1em;
+	}
+	
+	.Weekday-0 .meal-container {
+		border: 1px solid red;
+	}
+	.Weekday-1 .meal-container{
+		border: 1px solid orange;
+	}
+	.Weekday-2 .meal-container{
+		border: 1px solid yellow;
+	}
+	.Weekday-3 .meal-container{
+		border: 1px solid green;
+	}
+	.Weekday-4 .meal-container{
+		border: 1px solid blue;
+	}
+	.Weekday-5 .meal-container{
+		border: 1px solid indigo;
+	}
+	.Weekday-6 .meal-container{
+		border: 1px solid violet;
 	}
 	/*
 	#days {
@@ -92,6 +153,10 @@ form {
   top: 10px;
 }
 
+.hide-axis {
+	display: none;
+}
+
 </style>
 
 
@@ -99,12 +164,13 @@ form {
 </head>
 <body>
 	<section id="d3-graph">
-		<form>
+		<!--<form>
 			<label><input type="radio" name="mode" value="multiples" checked> Multiples</label>
 			<label><input type="radio" name="mode" value="stacked"> Stacked</label>
-		</form>
+		</form>-->
 	</section>
 	<header id="search">
+		<button id="stack-em">Stack em</button><button id="flip-em">Flip em</button>
 		<h1>I ate...</h1>
 		<input id="search-food" placeholder="What did I eat?">
 		<button class="search-food-button">Search</button>
@@ -122,7 +188,7 @@ form {
 		<button class="addFood-button">Add Food</button>
 	</section>
 	
-	<section id="days" class="container"></section>
+	<section id="days"></section>
 	
 	
 	
@@ -141,7 +207,7 @@ form {
 		<div class="nutid"><%= nutritionixId %></div>
 		<div><%= quantity %></div>
 		<div><%= units %></div>
-		<div><%= calories %></div>
+		<div><%= calories.toFixed(2) %></div>
 	</script>
 	
 	<script>
@@ -253,7 +319,7 @@ form {
 				this.meal=params.meal;
 				this.calories=0;
 				this.$el.append('<div class="meal-name">'+this.meal+'</div>');
-				this.$el.append('<div class="calorie-total">'+this.calories+'</div>');
+				this.$el.append('<div class="calorie-total">'+this.calories.toFixed(2)+'</div>');
 				//console.dir(this.$el.css);
 				
 				this.collection.on('add', this.conditionalAddOne, this);
@@ -287,8 +353,8 @@ form {
 				//console.dir(this.$('.calorie-total'));
 				var foodView = new FoodView({ model: food });
 				this.$el.append(foodView.el); // adding all the person objects.
-				this.calories += parseInt(food.get('calories'));
-				this.$('.calorie-total')[0].innerHTML=this.calories;
+				this.calories += +food.get('calories');
+				this.$('.calorie-total')[0].innerHTML=this.calories.toFixed(2);
 				//this.$el.
 			}
 		});
@@ -298,6 +364,8 @@ form {
 		var DateView = Backbone.View.extend({
 			tagName: 'div',
 			day: String,
+			date: Date,
+			dayOfWeek: Number,
 			calories: Number,
 			collection: Object,
 			attributes: {
@@ -306,11 +374,34 @@ form {
 			initialize: function(params){
 				this.collection = params.collection;
 				this.day = params.day;
-				this.calories = parseInt(params.firstCalories);
-				
-				this.$el.append('<button type="button" class="day-button btn btn-block row" data-toggle="collapse" data-target="#meals-for-'+this.day+'"><div class="col-xs-3">'+this.day+'</div> - <div class="col-xs-3 calorie-total"'+this.calories+'</div></button>');
+				this.date = new Date(+(this.day.slice(0,4)),+(this.day.slice(4,6))-1,+(this.day.slice(6)));
+				this.dayOfWeek = this.date.getDay();
+				this.calories = +params.firstCalories;
+				//create the button element and the content element, then add a jquery click listener to the button to slideUp or slideDown(), and don't bother with bootstrap
+				//use Date.getDay() to give the button a different color based on day of week
+				var dayClass = 'Weekday-'+this.dayOfWeek;
+				this.$el.addClass(dayClass);
+				var b = $('<button type="button" class="day-button" <div>'+this.day+'</div> - <div class="calorie-total">'+this.calories.toFixed(2)+'</div></button>');
+				this.$el.append(b);
+				//this.$el.append('<button type="button" class="day-button btn btn-block col-xs-12" data-toggle="collapse" data-target="#meals-for-'+this.day+'"><div class="col-xs-3">'+this.day+'</div> - <div class="col-xs-3 calorie-total"'+this.calories+'</div></button>');
 				//this.$el.append('<div class="calorie-total">'+this.calories+'</div>');
-				this.$el.append('<div class="meals collapse" id="meals-for-'+this.day+'"></div>');
+				var d = $('<div class="meals" id="meals-for-'+this.day+'"></div>');
+				this.$el.append(d);
+				//d.slideDown();
+				b.click(function(){
+					//console.dir(this);
+					var c = $(this.nextElementSibling);
+					if(c.hasClass('expand')) {
+						//console.log('clicked a day with in - ' + this.day);
+						c.slideUp();
+						c.toggleClass('expand');
+					}
+					else {
+						//console.log('clicked a day without in - ' + this.day);
+						c.slideDown();
+						c.toggleClass('expand');
+					}
+				});
 				this.$el.css({'order':(parseInt(this.day)-20150000) * -1});
 				this.collection.on('add', this.conditionalUpdateCalories, this);
 				//console.dir(this);
@@ -325,8 +416,8 @@ form {
 			
 			},
 			updateCalories: function(food) {
-				this.calories += parseInt(food.get('calories'));
-				this.$('.calorie-total')[0].innerHTML=this.calories;
+				this.calories += +food.get('calories');
+				this.$('.calorie-total')[0].innerHTML=this.calories.toFixed(2);
 				
 			}
 		});
@@ -339,7 +430,7 @@ form {
 				'click .search-food-button': 'search'
 			},
 			search: function(e) {
-				console.log('searching...');
+				//console.log('searching...');
 				//console.dir(e);
 				var searchBase = 'https://api.nutritionix.com/v1_1/search/';
 				var searchParams = '?results=0:3&fields=item_name,brand_name,item_id,nf_calories&';
@@ -349,7 +440,7 @@ form {
 				//var nc = self.nutController;
 				//console.dir(nc);
 				var searchUrl = searchBase+searchString+searchParams+'appId='+nAppId+'&appKey='+nAppKey;
-				console.log(searchUrl);
+				//console.log(searchUrl);
 				$.ajax({
 					  // The 'type' property sets the HTTP method.
 					  // A value of 'PUT' or 'DELETE' will trigger a preflight request.
@@ -370,8 +461,8 @@ form {
 						//console.dir(result.hits[0].fields);
 						//var item1 = new app.FoodItem({name: 'tortellini',meal: 'Dinner', quantity: 8, units: 'oz', calories: 400, notes: 'I ate dinner'});
 						//var nutListView = new NutritionixListView({data: result});
-						console.log('got a result...');
-						console.dir(result);
+						//console.log('got a result...');
+						//console.dir(result);
 						self.calorieViewController.buildNutListView({data:result});
 						/*
 						for (var i=0,l=result.hits.length;i<l;i++) {
@@ -397,6 +488,7 @@ form {
 		var NutritionixListView = Backbone.View.extend({
 			tagName: 'ul',
 			collection: Object,
+			childViews: [],
 			initialize: function(params) {
 				this.collection = params.collection;
 				//this.render();
@@ -412,6 +504,13 @@ form {
 			addOne: function(nutFood) {
 				var nutFoodView = new NutritionixFoodView({ model: nutFood });
 				this.$el.append(nutFoodView.el); // adding all the food objects.
+				this.childViews.push(nutFoodView);
+			},
+			clearChildren: function() {
+				this.childViews.forEach(function(child) {
+					child.close();
+				});
+				this.childViews = [];
 			}
 		});
 		
@@ -423,6 +522,7 @@ form {
 			template: template('nutritionixFoodTemplate'),
 			initialize: function(){
 				this.render();
+				return this;
 			},
 
 			render: function(){
@@ -431,6 +531,12 @@ form {
 			},
 			pickNutritionixItem: function(){
 				self.calorieViewController.populateAddFood(this.model);
+			},
+			close: function(){
+				this.remove();
+				this.unbind();
+				console.log('closed a nutfoodview');
+				//this.model.unbind("change", this.modelChanged);
 			}
 		});
 		
@@ -460,8 +566,8 @@ form {
 			},
 			
 			submit: function(e){
-				console.log('submitting addfoodview');
-				console.dir(e);
+				//console.log('submitting addfoodview');
+				//console.dir(e);
 				//e.preventDefault();  // preventing default submission..
 				var name = $('.food-input').val();  // getting new form values..
 				var meal = $('.meal-input').val();  // getting new form values..
@@ -471,6 +577,7 @@ form {
 				var calories = $('.calories-input').val();  // getting new form values..
 				//var person = new App.Models.Person({ name: newPersonName });// creating a new person object..
 				this.collection.add({name: name, meal: meal, date: date, quantity: quantity, units: units, calories: calories}); // adding this to current collection..
+				calorieViewController.clearNutData();
 
 			},
 			populate: function(nutfood) {
@@ -539,7 +646,7 @@ form {
 				var firstCalories = food.get('calories');
 				var dateView = null;
 				if(!self.map[datekey]) {
-					dateView = new DateView({collection: self.collection, day: datekey, firstCalories: firstCalories});
+					dateView = new DateView({collection: self.collection, day: datekey, firstCalories: +firstCalories});
 					$('#days').append(dateView.render().el);
 					self.map[datekey] = {dateView: dateView};
 				}
@@ -550,7 +657,7 @@ form {
 				if(!self.map[datekey][mealkey]) {
 					var mealView = new MealView({collection: self.collection, list: [food], date: datekey, meal: mealkey});
 					//dateView.$el.find('.meals')[0].append(mealView.render().el);
-					console.dir(dateView.$el.find('.meals'));
+					//console.dir(dateView.$el.find('.meals'));
 					var dateEl = dateView.$el.find('.meals');
 					$(mealView.render().el).appendTo(dateEl);
 					self.map[datekey][mealkey]=mealView;
@@ -577,19 +684,22 @@ form {
 				
 			}
 			this.nutListView = new NutritionixListView({collection: this.nutritionixCollection});
-			console.log('the nut list view');
-			console.dir(this.nutListView);
+			//console.log('the nut list view');
+			//console.dir(this.nutListView);
 			$('#nutritionix-list').append(this.nutListView.render().el);
 		};
-		
-		CalorieViewController.prototype.clearNutCollection = function() {
+		//calorieViewController.clearNutData();
+		CalorieViewController.prototype.clearNutData = function() {
 			this.nutritionixCollection.reset();
+			this.nutListView.clearChildren();
+			this.nutListView.render();
+			//console.log(this.nutritionixCollection);
 			//need to set the views to listen to reset event and clean themselves up
 		};
 		
 		CalorieViewController.prototype.populateAddFood = function(nutfood) {
-			console.log('the nutfood to use...');
-			console.dir(nutfood);
+			//console.log('the nutfood to use...');
+			//console.dir(nutfood);
 			this.addFoodView.populate(nutfood);
 
 		};
@@ -795,7 +905,279 @@ console.dir(data);
 };
 //}
 </script>
+<script>
+function justStacked() {
+
+	var margin = {top: 20, right: 50, bottom: 30, left: 20},
+		width = 960 - margin.left - margin.right,
+		height = 500 - margin.top - margin.bottom;
+	
+	var x = d3.scale.ordinal()
+		.rangeRoundBands([0, width]);
+	var y = d3.scale.linear()
+		.rangeRound([height, 0]);
+	var z = d3.scale.category10();//color for meals
+	
+	var xAxis = d3.svg.axis()
+		.scale(x)
+		.orient("bottom");
+	
+	var yAxis = d3.svg.axis()
+		.scale(y)
+		.orient("right");
+
+	var svg = d3.select('#d3-graph').append('svg')
+		.attr('width', width + margin.left + margin.right)
+		.attr('height', height + margin.top + margin.bottom)
+	.append('g')
+		.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+	
+	
+	var data = buildGroupedData();
+	data.forEach(function(d) {
+		d.x = d.date;
+		d.y = +d.cals;
+		d.y0 = 0;
+	});
+	
+	var mealGroups = d3.nest()
+		.key(function(d){return d.meal;})
+		.entries(data);
+	console.log(mealGroups);
+	
+	
+	var stack = d3.layout.stack();
+		//.out(function(d, y0) { d.valueOffset = y0; });
+	
+	stack.values(function(d,i){
+		d.mealMax = d3.max(d.values,function(k){return k.y;});
+		//if(i===0){d.mealMax = 0;}
+		//else {d.mealMax = }
+		return d.values;
+	});
+	//in here, d is a mealgroup
+	var mealLayers = stack(mealGroups);
+	
+	//.values(function(d) {
+		//console.log(d.values);
+		//return d.values;
+	//});
+	console.log(mealLayers);
+	//var mealLayers = stack(mealGroups);
+		//.x(function(d){return d.date;})
+		//.y(function(d){return +d.cals;});
+	//console.log(mealLayers);
+		//.x(function(d){return d.date;})
+		//.y(function(d){return +d.cals;});
+		
+	//console.dir(mealLayers);
+	x.domain(mealLayers[0].values.map(function(d) { return d.x; }));
+	//y.domain should be 0 to maximum of all y0+y values, so can look only at he last meallayer
+	y.domain([0,d3.max(mealLayers[mealLayers.length - 1].values, function(d){return d.y0+d.y})]).nice();
+	//y.domain([0, d3.max(mealLayers[0].values[mealLayers.length - 1], function(d) { return d.y0 + d.y; })]).nice();
+	console.dir(x.domain());
+	console.dir(y.domain());
+	
+	
+	
+	var layer = svg.selectAll(".layer")
+			.data(mealLayers)
+		.enter().append("g")
+			.attr("class", "layer")
+			.style("fill", function(d, i) { return z(i); });
+
+	layer.selectAll("rect")
+			.data(function(d) { return d.values; })
+		.enter().append("rect")
+			.attr("x", function(d) { return x(d.x); })
+			.attr("y", function(d) { return y(d.y + d.y0); })
+			.attr("height", function(d) { return y(d.y0) - y(d.y + d.y0); })
+			.attr("width", x.rangeBand() - 1);
+			
+
+	svg.append("g")
+		.attr("class", "axis axis--x")
+		.attr("transform", "translate(0," + height + ")")
+		.call(xAxis);
+
+	svg.append("g")
+		.attr("class", "axis axis--y")
+		.attr("transform", "translate(" + width + ",0)")
+		.call(yAxis);
+
+	function trans() {
+		var t = svg.transition().duration(750),
+        //g = t.selectAll(".layer").attr("transform", function(d) { return "translate(0," + d.mealMax + ")"; });
+		currentBase = 0,
+		gs = t.selectAll('.layer');
+		gs[0].forEach(function(g,i){
+			var dg = d3.select(g);
+			var rs = dg.selectAll('rect');
+			//console.log(rs);
+			var mm = 0;
+			if(i!=0) {
+				var ng = d3.select(gs[0][i-1]);
+				mm = ng[0][0].__data__.mealMax;
+				currentBase += mm;
+			}
+			//var mm = dg[0][0].__data__.mealMax;
+			console.dir(currentBase);
+			rs[0].forEach(function(r) {
+				var dr = d3.select(r);
+				console.log(dr);
+				//d3.select(r).attr('y',dr.__data__.y(currentBase));
+			});
+		})
+		//console.log(g);
+			//.selectAll('rect')
+			//.attr('y',function(d) {return d.mealMax;});
+	}
+	
+	$('#flip-em').click(function(){
+		trans();
+	});
+};
 
 
+</script>
+<script>
+function stackedSolo() {
+	var margin = {top: 20, right: 50, bottom: 30, left: 20},
+	width = 960 - margin.left - margin.right,
+	height = 500 - margin.top - margin.bottom;
+	
+	var x = d3.scale.ordinal()
+		.rangeRoundBands([0, width]);
+	var y = d3.scale.linear()
+		.rangeRound([height, 0]);
+	var z = d3.scale.category10();//color for meals
+	
+	var xAxis = d3.svg.axis()
+		.scale(x)
+		.orient("bottom");
+	
+	var yAxis = d3.svg.axis()
+		.scale(y)
+		.orient("right");
+
+	var svg = d3.select('#d3-graph').append('svg')
+		.attr('width', width + margin.left + margin.right)
+		.attr('height', height + margin.top + margin.bottom)
+	.append('g')
+		.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+	
+	
+	var data = buildGroupedData();
+	
+	var dayDomain = [];
+	
+	var mealNest = d3.nest()
+					.key(function(d){ return d.meal;})
+					.rollup(function(v){ 
+						return buildDayDomain(v,dayDomain);
+					})
+					/*.rollup(function(v) { return {
+						values: buildDayDomain(v,dayDomain),
+						max: d3.max(v, function(d){ return +d.cals}),
+						mean: d3.mean(v, function(d){ return +d.cals})
+					};})*/
+					.entries(data);
+	//console.log(mealNest);
+	console.log(dayDomain);
+	
+	function buildDayDomain(values,dd) {
+		//var dd = dayDomain;
+		values.forEach(function(vv) {
+			vv.x=vv.date;
+			vv.y = +vv.cals;
+			if(dd.indexOf(String(vv.date))<0) {
+				dd.push(String(vv.date));
+			}
+		});
+		//var mean = d3.mean(values, function(d){return +d.cals;});
+		//var max = d3.max(values, function(d){return +d.cals;});
+		//values.mean=mean;
+		//values.max=max;
+		//dayDomain = dd;
+		return values;
+	}
+	
+	function reconcileArray(array, domain, key, val, deft) {
+		var arrayToReturn = [];
+		var currentIndex = 0;
+		domain.forEach(function(item) {
+			if(array.length >= currentIndex+1 && array[currentIndex][key]==item) {
+				arrayToReturn.push(array[currentIndex]);
+				currentIndex++;
+			}
+			else {
+				var obj = new Object();
+				obj[key] = item;
+				obj[val] = deft;
+				arrayToReturn.push(obj);
+			}
+		});
+		
+		return arrayToReturn;
+	}
+	mealNest.forEach(function(meal) {
+		meal.values = reconcileArray(meal.values,dayDomain,'x','y',0);
+	});
+	console.log(mealNest);
+	/*var thearray = [{date:1,cals:'122'},{date:12,cals:'1234'},{date:15,cals:'asdf'}];
+	var  thedomain = [1,2,12,13,15];
+	console.log('reconciling array...');
+	console.log(thearray);
+	console.log(thedomain);
+	console.log(reconcileArray(thearray,thedomain,'date','cals',0));*/
+	
+	var mealStack = d3.layout.stack()
+					.values(function(d){
+						return d.values;
+					})(mealNest);
+					//.values(function(d){return [{x:'20151210',y:10},{x:'20151211',y:15},{x:'20151212',y:20},{x:'20151213',y:10}]})
+					//.x(function(d){ return String(d.date); })
+					//.y(function(d){ return +d.cals; })(mealNest);
+	console.log(mealStack);
+	
+	x.domain(dayDomain);
+	//y.domain should be 0 to maximum of all y0+y values, so can look only at he last meallayer
+	y.domain([0,d3.max(mealStack[mealStack.length - 1].values, function(d){return d.y0+d.y})]).nice();
+	
+	console.log(x.domain());
+	console.log(y.domain());
+	
+	var layer = svg.selectAll(".layer")
+			.data(mealStack)
+		.enter().append("g")
+			.attr("class", "layer")
+			.style("fill", function(d, i) { return z(i); });
+
+	layer.selectAll("rect")
+			.data(function(d) { return d.values; })
+		.enter().append("rect")
+			.attr("x", function(d) { return x(d.x); })
+			.attr("y", function(d) { return y(d.y + d.y0); })
+			.attr("height", function(d) { return y(d.y0) - y(d.y + d.y0); })
+			.attr("width", x.rangeBand() - 1);
+			
+
+	svg.append("g")
+		.attr("class", "axis axis--x")
+		.attr("transform", "translate(0," + height + ")")
+		.call(xAxis);
+
+	svg.append("g")
+		.attr("class", "axis axis--y")
+		.attr("transform", "translate(" + width + ",0)")
+		.call(yAxis);
+		
+		
+}
+
+$('#stack-em').click(function(){
+	stackedSolo();
+});
+</script>
 </body>
 </html>

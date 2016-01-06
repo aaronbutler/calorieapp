@@ -18,22 +18,87 @@
 <script src="https://cdn.firebase.com/libs/backbonefire/0.5.1/backbonefire.js"></script>
 
 <script src="//d3js.org/d3.v3.min.js"></script>
+<script src="http://dimplejs.org/dist/dimple.v2.1.6.min.js"></script>
 
 
 <style>
+
+	.nutritionixList {
+		-webkit-transition-duration: 1000ms;
+		transition-duration: 1000ms;
+		position: absolute;
+
+		top: 10%;
+		width: 78%;
+		left: 50%;
+		margin: 0 0 0 -39%;
+		background-color: red;
+		box-shadow: -15px -15px 53px #888888;
+		opacity: 1;
+		z-index: 1000;
+	}
+	.nutritionixList li {
+		display: flex;
+		flex-wrap: wrap;
+	}
+	.addFood {
+		-webkit-transition-duration: 1000ms;
+		transition-duration: 1000ms;
+		position: absolute;
+
+		top: 10%;
+		width: 78%;
+		left: 50%;
+		margin: 0 0 0 -39%;
+		background-color: red;
+		box-shadow: -15px -15px 53px #888888;
+		opacity: 1;
+		z-index: 1001;
+		
+		display: flex;
+		flex-wrap: wrap;
+	}
+	
+	.d3-graph {
+		-webkit-transition-duration: 1000ms;
+		transition-duration: 1000ms;
+		position: absolute;
+
+		top: 10%;
+		width: 98%;
+		left: 50%;
+		margin: 0 0 0 -49%;
+		background-color: red;
+		box-shadow: -15px -15px 53px #888888;
+		opacity: 1;
+		z-index: 1002;
+		
+		display: flex;
+		flex-wrap: wrap;
+	}
+	
+	.addFoodItem {
+		width: 100%;
+	}
+	
 	.food-container {
 		width: 100%;
 		order: 1;
 		display: flex;
 		flex-box: box;
 	}
-	#days {
+	.days {
+	width: 98%;
 		display: flex;
 		flex-wrap: wrap;
+		flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	flex-direction: column;
 	}
 	.day-container {
 		margin: 0.1em;
-		width: 80%;
+		width: 60%;
 	}
 	.day-button {
 		width: 100%;
@@ -97,8 +162,51 @@
 	.Weekday-6 .meal-container{
 		border: 1px solid violet;
 	}
+	
+	.hide {
+		transform: translateY(110%);
+		-webkit-transform: translateY(110%);
+		display: none;
+	}
+	
+	.searchHeader {
+	//position: absolute;
+	width: 100%;
+	padding: 5em;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	flex-direction: column;
+	
+	}
+	
+	.searchHeaderItem {
+	//position: absolute;
+		width:30%;
+		text-align: center;
+		
+		//margin: 0 auto;
+	}
+	
+	.closer{
+			float:right;
+			margin-top:5px;
+			margin-right:5px;
+			cursor:pointer;
+			color: #fff;
+			border: 1px solid #AEAEAE;
+			border-radius: 30px;
+			background: #605F61;
+			font-size: 31px;
+			font-weight: bold;
+			display: inline-block;
+			line-height: 0px;
+			padding: 11px 3px;
+
+		}
 	/*
-	#days {
+	.days {
 		display: flex;
 		flex-wrap: wrap;
 	}
@@ -118,14 +226,36 @@
 		order: 0;
 	}*/
 </style>
-
+<style>/*stolen from https://css-tricks.com/styling-texty-inputs-only/ */
+input {
+    border: 5px solid yellow; 
+    -webkit-box-shadow: 
+      inset 0 0 8px  rgba(0,0,0,0.1),
+            0 0 16px rgba(0,0,0,0.1); 
+    -moz-box-shadow: 
+      inset 0 0 8px  rgba(0,0,0,0.1),
+            0 0 16px rgba(0,0,0,0.1); 
+    box-shadow: 
+      inset 0 0 8px  rgba(0,0,0,0.1),
+            0 0 16px rgba(0,0,0,0.1); 
+    padding: 15px;
+    background: rgba(255,255,0,0.5);
+    margin: 0 0 10px 0;
+}
+</style>
 <style>
 
 body {
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   margin: auto;
   position: relative;
-  width: 960px;
+  //width: 960px;
+  width: 100%;
+  display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	flex-direction: column;
 }
 
 text {
@@ -163,46 +293,48 @@ form {
 
 </head>
 <body>
-	<section id="d3-graph">
+	<section id="d3-graph" class="hide d3-graph" style="height: 50%; width: 95%;">
+		<div id="graphCloser" class="closer">X</div>
 		<!--<form>
 			<label><input type="radio" name="mode" value="multiples" checked> Multiples</label>
 			<label><input type="radio" name="mode" value="stacked"> Stacked</label>
 		</form>-->
 	</section>
-	<header id="search">
-		<button id="stack-em">Stack em</button><button id="flip-em">Flip em</button>
-		<h1>I ate...</h1>
-		<input id="search-food" placeholder="What did I eat?">
-		<button class="search-food-button">Search</button>
+	<header id="search" class="searchHeader">
+		<!--<button id="stack-em">Stack em</button>--><button id="flip-em">Flip em</button>
+		<h1 class="searchHeaderItem">I ate...</h1>
+		<input id="search-food" class="searchHeaderItem searchInput" placeholder="What did I eat?">
+		<button class="searchHeaderItem search-food-button">Search</button>
 	</header>
 	
-	<section id="nutritionix-list"></section>
+	<section id="nutritionix-list" class="hide nutritionixList"></section>
 	
-	<section id="addFood">
-		<input class="food-input" type="text" value="food">
-		<input class="meal-input" type="text" placeholder="meal">
-		<input class="date-input" type="text" placeholder="date">
-		<input class="quantity-input" type="text" placeholder="quantity">
-		<input class="units-input" type="text" placeholder="units">
-		<input class="calories-input" type="text" placeholder="calories">
-		<button class="addFood-button">Add Food</button>
+	<section id="addFood" class="addFood hide">
+		<input class="addFoodItem date-input" type="text" placeholder="date">
+		<input class="addFoodItem meal-input" type="text" placeholder="meal">
+		<input class="addFoodItem quantity-input" type="text" placeholder="quantity">
+		<div class="addFoodItem food-input"><%= food %></div>
+		<div class="addFoodItem units-input"><%= units %></div>
+		<div class="addFoodItem calories-input"><%= calories %></div>
+		<button class="addFoodItem addFood-button">Add Food</button>
 	</section>
 	
-	<section id="days"></section>
+	<section id="days" class="days"></section>
 	
 	
 	
 	<section id="meals"></section>
 	<script id="foodTemplate" type="text/template">
-		<div><%= name %></div>
-		<div><%= meal %></div>
 		<div><%= date %></div>
+		<div><%= meal %></div>
+		<div><%= name %></div>
 		<div><%= quantity %></div>
 		<div><%= units %></div>
 		<div><%= calories %></div>
 	</script>
 	
 	<script id="nutritionixFoodTemplate" type="text/template">
+		<button class="eatMe">Eat Me</button>
 		<div><%= name %></div>
 		<div class="nutid"><%= nutritionixId %></div>
 		<div><%= quantity %></div>
@@ -441,6 +573,7 @@ form {
 				//console.dir(nc);
 				var searchUrl = searchBase+searchString+searchParams+'appId='+nAppId+'&appKey='+nAppKey;
 				//console.log(searchUrl);
+				$('#nutritionix-list').toggleClass('hide');
 				$.ajax({
 					  // The 'type' property sets the HTTP method.
 					  // A value of 'PUT' or 'DELETE' will trigger a preflight request.
@@ -517,7 +650,8 @@ form {
 		var NutritionixFoodView = Backbone.View.extend({
 			tagName: 'li',
 			events: {
-				'click .nutid': 'pickNutritionixItem'
+				'click .nutid': 'pickNutritionixItem',
+				'click .eatMe': 'pickNutritionixItem'
 			},
 			template: template('nutritionixFoodTemplate'),
 			initialize: function(){
@@ -531,6 +665,7 @@ form {
 			},
 			pickNutritionixItem: function(){
 				self.calorieViewController.populateAddFood(this.model);
+				$('#addFood').toggleClass('hide');
 			},
 			close: function(){
 				this.remove();
@@ -587,12 +722,16 @@ form {
 				var a = String(d.getDate());
 				var date = y+m+a;
 				
-				$('.food-input').val(nutfood.get('name'));
+				//$('.food-input').html('asdfasdfasfd')
+				//$('.food-input').val(nutfood.get('name'));
 				$('.meal-input').val('snack');
 				$('.date-input').val(date);
 				$('.quantity-input').val('1');
-				$('.units-input').val(nutfood.get('units'));
-				$('.calories-input').val(nutfood.get('calories'));
+				//$('.units-input').val(nutfood.get('units'));
+				//$('.calories-input').val(nutfood.get('calories'));
+				$('.food-input').html(nutfood.get('name'));
+				$('.units-input').html(nutfood.get('units'));
+				$('.calories-input').html(nutfood.get('calories'));
 			
 			}
 		});
@@ -1033,9 +1172,7 @@ function justStacked() {
 			//.attr('y',function(d) {return d.mealMax;});
 	}
 	
-	$('#flip-em').click(function(){
-		trans();
-	});
+	
 };
 
 
@@ -1178,6 +1315,46 @@ function stackedSolo() {
 $('#stack-em').click(function(){
 	stackedSolo();
 });
+</script>
+<script>
+function doDimple() {
+	//var svg = dimple.newSvg("#d3-graph", 800, 600);
+	var svg = dimple.newSvg("#d3-graph","100%","100%");
+	var data = calorieViewController.collection.toJSON();
+	//data.sort(function(a, b){ return d3.ascending(+(a.date), +(b.date)); });
+	console.log(data);
+    //var data = [
+     // { "Word":"Hello", "Awesomeness":2000 },
+     // { "Word":"World", "Awesomeness":3000 }
+    //];
+    var chart = new dimple.chart(svg, data);
+	chart.setMargins("60px", "30px", "110px", "70px");
+    var c = chart.addCategoryAxis("x", "date");
+	c.addOrderRule("date",true);
+    chart.addMeasureAxis("y", "calories");
+    var s = chart.addSeries("meal", dimple.plot.bar);
+	//s.addOrderRule("date");
+	//chart.addLegend(200, 10, 380, 20, "right");
+	chart.addLegend("-100px", "30px", "100px", "-70px");
+    chart.draw();
+	
+	 window.onresize = function () {
+                // As of 1.1.0 the second parameter here allows you to draw
+                // without reprocessing data.  This saves a lot on performance
+                // when you know the data won't have changed.
+                chart.draw(0, true);
+            };
+}
+$('#flip-em').click(function(){
+		$('#d3-graph').toggleClass('hide');
+		doDimple();
+	});
+	
+	$('#graphCloser').click(function(){
+		$('#d3-graph').toggleClass('hide');
+		$('svg').remove();
+		//doDimple();
+	});
 </script>
 </body>
 </html>

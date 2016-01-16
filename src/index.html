@@ -20,9 +20,21 @@
 <script src="//d3js.org/d3.v3.min.js"></script>
 <script src="http://dimplejs.org/dist/dimple.v2.1.6.min.js"></script>
 
+<script src="js/date.format.js"></script>
+
 
 <style>
-
+	hr {
+		display: block;
+		margin-top: 1em;
+		margin-bottom: 1em;
+		margin-left: auto;
+		margin-right: auto;
+		border-style: inset;
+		border-width: 0.5em;
+		width: 100%;
+	}
+	
 	.nutritionixList {
 		-webkit-transition-duration: 1000ms;
 		transition-duration: 1000ms;
@@ -288,8 +300,83 @@ form {
 }
 
 </style>
+<style>
+	.formTest {
+		width: 50%;
+		padding: 1em;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+	}
+	
+	.foodNameTest {
+		text-align: center;
+		width: 100%;
+	}
+	
+	.formLabelTest {
+		width: 20%;
+		font-style: italic;
+		padding: 1em;
+	}
+	
+	.formContentTest {
+		padding: 1em;
+		width: 70%;
+	}
+	
+	.formHalfContentTest {
+		padding: 1em;
+		width: 30%;
+	}
+	
+	.formButtonTest {
+		padding: 1em;
+		width: 40%;
+	}
+	
+	.staticContentTest {
+		font-weight: bold;
+	}
+	
+	.calories-input:before {
+		content: " \2192       ";
+	}
+	
+	.calories-input:after {
+		content: " calories";
+	}
+</style>
 
-
+<style>
+	.nutTestSect {
+		width: 50%;
+		padding: 1em;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+	}
+	
+	.nutTestHeader {
+		text-align: center;
+		width: 100%;
+	}
+	
+	.nutTestUl {
+		width: 100%;
+	}
+	
+	.nutTestLi {
+		width: 100%;
+		padding: 1em;
+		display: flex;
+		flex-wrap: wrap;
+	}
+	
+	.nutTestData {
+		width: 30%;
+	}
+</style>
 
 </head>
 <body>
@@ -306,17 +393,16 @@ form {
 		<input id="search-food" class="searchHeaderItem searchInput" placeholder="What did I eat?">
 		<button class="searchHeaderItem search-food-button">Search</button>
 	</header>
-	
+	<hr />
 	<section id="nutritionix-list" class="hide nutritionixList"></section>
 	
 	<section id="addFood" class="addFood hide">
-		<input class="addFoodItem date-input" type="text" placeholder="date">
-		<input class="addFoodItem meal-input" type="text" placeholder="meal">
-		<input class="addFoodItem quantity-input" type="text" placeholder="quantity">
-		<div class="addFoodItem food-input"><%= food %></div>
-		<div class="addFoodItem units-input"><%= units %></div>
-		<div class="addFoodItem calories-input"><%= calories %></div>
-		<button class="addFoodItem addFood-button">Add Food</button>
+		<h2 class="foodNameTest food-input"><%= food %></h2>
+		<label class="formLabelTest">Serving Size</label><div class="formContentTest staticContentTest units-input"><%= units %></div>
+		<label class="formLabelTest"># of servings</label><input id="thing1" placeholder="1" class="formHalfContentTest quantity-input"><span class="formHalfContentTest staticContentTest calories-input"><%= calories %></span>
+		<label class="formLabelTest">Date</label><input id="thing2" placeholder="20160116" class="formContentTest date-input">
+		<label class="formLabelTest">Meal</label><input id="thing3" placeholder="snack" class="formContentTest meal-input">
+		<button class="addFoodItem addFood-button formButtonTest">Add Food</button>
 	</section>
 	
 	<section id="days" class="days"></section>
@@ -324,6 +410,29 @@ form {
 	
 	
 	<section id="meals"></section>
+	
+	<section id="nutTestSect" class="nutTestSect">
+		<h2 class="nutTestHeader">Search Term - Salad</h2>
+		<h3 id="dfTest"></h3>
+		<ul class="nutTestUl">
+			<li class="nutTestLi"><div class="nutTestData">Tossed Salad - 1 salad</div><div class="nutTestData">166.05 calories/serving</div><button class="nutTestData">I ate this</button></li>
+			<li class="nutTestLi"><div class="nutTestData">Tossed Salad - 1 serving</div><div class="nutTestData">166.04 calories/serving</div><button class="nutTestData">I ate this</button></li>
+			<li class="nutTestLi"><div class="nutTestData">Salad</div><div class="nutTestData">35.00 calories/serving</div><button class="nutTestData">I ate this</button></li>
+		</ul>
+	</section>
+	
+	<section id="formTest" class="formTest">
+		<h2 class="foodNameTest">Banana</h2>
+		<label class="formLabelTest">Serving Size</label><div class="formContentTest staticContentTest">1 medium (7" to 7-7/8" long)</div>
+		<label class="formLabelTest"># of servings</label><input id="thing1" placeholder="1" class="formHalfContentTest"><span class="formHalfContentTest staticContentTest">&rarr;&nbsp;&nbsp;387 calories</span>
+		<label class="formLabelTest">Date</label><input id="thing2" placeholder="20160116" class="formContentTest">
+		<label class="formLabelTest">Meal</label><input id="thing3" placeholder="snack" class="formContentTest">
+		<!--<label class="formLabelTest">Calories/serving<div class="formContentTest">200.25 calories per serving</div>-->
+		<button class="formButtonTest">Submit</button><button class="formButtonTest">Cancel</button>
+	</section>
+	
+	
+	
 	<script id="foodTemplate" type="text/template">
 		<div><%= date %></div>
 		<div><%= meal %></div>
@@ -342,6 +451,12 @@ form {
 		<div><%= calories.toFixed(2) %></div>
 	</script>
 	
+	<script>
+		var dfTestEl = $('#dfTest');
+		var dfTestDate = new Date();
+		var dfTestFormat = dateFormat(dfTestDate,'yyyymmdd');
+		console.dir(dfTestFormat);
+	</script>
 	<script>
 		//var searchString = '';
 		var self = this;
@@ -704,24 +819,30 @@ form {
 				//console.log('submitting addfoodview');
 				//console.dir(e);
 				//e.preventDefault();  // preventing default submission..
-				var name = $('.food-input').val();  // getting new form values..
+				var name = $('.food-input').html();  // getting new form values..
 				var meal = $('.meal-input').val();  // getting new form values..
 				var date = $('.date-input').val();  // getting new form values..
 				var quantity = $('.quantity-input').val();  // getting new form values..
-				var units = $('.units-input').val();  // getting new form values..
-				var calories = $('.calories-input').val();  // getting new form values..
+				var units = $('.units-input').html();  // getting new form values..
+				var calories = $('.calories-input').html();  // getting new form values..
 				//var person = new App.Models.Person({ name: newPersonName });// creating a new person object..
-				this.collection.add({name: name, meal: meal, date: date, quantity: quantity, units: units, calories: calories}); // adding this to current collection..
+				var it = {name: name, meal: meal, date: date, quantity: quantity, units: units, calories: +calories};
+				console.log('it is: ');
+				console.dir(it);
+				this.collection.add(it); // adding this to current collection..
+				
 				calorieViewController.clearNutData();
+				$('#addFood').toggleClass('hide');
+				$('#nutritionix-list').toggleClass('hide');
 
 			},
 			populate: function(nutfood) {
 				var d = new Date();
-				var y = String(d.getFullYear());
-				var m = String(d.getMonth()+1);
-				var a = String(d.getDate());
-				var date = y+m+a;
-				
+				//var y = String(d.getFullYear());
+				//var m = String(d.getMonth()+1);
+				//var a = String(d.getDate());
+				//var date = y+m+a;
+				var date = dateFormat(d,'yyyymmdd');
 				//$('.food-input').html('asdfasdfasfd')
 				//$('.food-input').val(nutfood.get('name'));
 				$('.meal-input').val('snack');
